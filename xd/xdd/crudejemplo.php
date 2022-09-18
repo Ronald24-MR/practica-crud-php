@@ -109,12 +109,49 @@ $listaLibros=$sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
 
 
 
+// paginacion:
+
+$sql = 'SELECT * FROM libros';
+$sentencia = $conexion->prepare($sql);
+$sentencia->execute();
+
+$articulosPagina = 3;
+
+$totalArticulosDB = $sentencia->rowCount();
+
+$paginas = $totalArticulosDB/3;
+$paginas = ceil($paginas);
+// echo $paginas;
+
 ?>
    
     
 <div class="xd">
     <div class="col-md-5">
     
+    <?php 
+
+        if(!$_GET){
+            header("Location:crudejemplo.php?pagina=1");
+        }
+
+        if($_GET['pagina']>$paginas || $_GET['pagina']<=0 ){
+            header("Location:crudejemplo.php?pagina=1");
+        }
+
+        $iniciar = ($_GET['pagina']-1)*$articulosPagina;
+        // echo $iniciar;
+
+        $sqlArticulos = 'SELECT * FROM libros LIMIT :iniciar,:articulos';
+        $sentenciaArticulos = $conexion->prepare($sqlArticulos);
+        $sentenciaArticulos->bindParam(':iniciar',$iniciar,PDO::PARAM_INT);
+        $sentenciaArticulos->bindParam(':articulos',$articulosPagina,PDO::PARAM_INT);
+        $sentenciaArticulos->execute();
+
+        $resultadoArticulos = $sentenciaArticulos->fetchAll();
+
+    ?>
+
     <div class="card">
         <div class="card-header">
             datos
@@ -168,7 +205,7 @@ $listaLibros=$sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($listaLibros as $libro) { ?>
+                <?php foreach($resultadoArticulos as $libro) { ?>
         
                 <tr>
                     <td><?php echo $libro['id']; ?></td>
@@ -200,18 +237,25 @@ $listaLibros=$sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
 
     <nav aria-label="Page navigation example">
       <ul class="pagination">
-        <li class="page-item disabled">
-          <a class="page-link" href="#" aria-label="Previous">
+        <li class="page-item <?php echo $_GET['pagina']<=1 ? 'disabled' : '' ?>">
+          <a class="page-link" href="crudejemplo.php?pagina=<?php echo $_GET['pagina']-1 ?>" aria-label="Previous">
             <span aria-hidden="true">&laquo;</span>
-            <span class="sr-only">Previous</span>
+            <span class="sr-only">Anterior</span>
           </a>
         </li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item">
-          <a class="page-link" href="#" aria-label="Next">
+
+        <?php for($i=0;$i<$paginas;$i++): ?>
+            <li class="page-item <?php echo $_GET['pagina']==$i+1 ? 'active' : '' ?>">
+                <a class="page-link" href="crudejemplo.php?pagina=<?php echo $i+1; ?>">
+                    <?php echo $i+1; ?>
+                </a>
+            </li>
+        <?php endfor ?>
+
+        <li class="page-item <?php echo $_GET['pagina']>=$paginas ? 'disabled' : '' ?>">
+          <a class="page-link" href="crudejemplo.php?pagina=<?php echo $_GET['pagina']+1 ?>" aria-label="Next">
             <span aria-hidden="true">&raquo;</span>
-            <span class="sr-only">Next</span>
+            <span class="sr-only">Siguiente</span>
           </a>
         </li>
       </ul>
